@@ -1,0 +1,12 @@
+apiVersion: webid.golang.betsys.com/v1alpha1
+kind: WebServer
+metadata:
+  labels:
+    app.kubernetes.io/name: webserver
+    app.kubernetes.io/instance: webserver-sample
+    app.kubernetes.io/part-of: webid-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: webid-operator
+  name: webserver-sample
+spec:
+  # TODO(user): Add fields here

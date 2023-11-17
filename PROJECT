@@ -10,4 +10,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: webid-operator
 repo: github.com/tomasji/webid-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: golang.betsys.com
+  group: webid
+  kind: WebServer
+  path: github.com/tomasji/webid-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

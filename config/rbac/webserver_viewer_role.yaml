@@ -1,0 +1,27 @@
+# permissions for end users to view webservers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: webserver-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: webid-operator
+    app.kubernetes.io/part-of: webid-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: webserver-viewer-role
+rules:
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - webservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - webservers/status
+  verbs:
+  - get
