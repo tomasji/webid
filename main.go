@@ -33,6 +33,7 @@ import (
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
 	"github.com/tomasji/webid-operator/controllers"
+	"github.com/tomasji/webid-operator/controllers/webserver"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -89,11 +90,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.WebServerReconciler{
+	if err = (&webserver.WebServerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "WebServer")
+		os.Exit(1)
+	}
+	if err = (&controllers.PageReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Page")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

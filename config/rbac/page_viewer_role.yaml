@@ -1,0 +1,27 @@
+# permissions for end users to view pages.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: page-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: webid-operator
+    app.kubernetes.io/part-of: webid-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: page-viewer-role
+rules:
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - pages
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - pages/status
+  verbs:
+  - get

@@ -1,0 +1,59 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - pages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - pages/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - pages/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - webservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - webservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - webid.golang.betsys.com
+  resources:
+  - webservers/status
+  verbs:
+  - get
+  - patch
+  - update

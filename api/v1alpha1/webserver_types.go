@@ -25,21 +25,21 @@ import (
 
 // WebServerSpec defines the desired state of WebServer
 type WebServerSpec struct {
-
-	// +kubebuilder:example=nginx:1.25.3
-	// +kubebuilder:validation:Required
-	// Image defines the image of the WebID server.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Docker nginx image"
-	Image string `json:"foo,omitempty"`
-
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:default=1
+
+	// Image defines the nginx docker image for the WebID server,
+	// for example 'nginx:1.25.3'
+	// +kubebuilder:example=nginx:1.25.3
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Docker nginx image"
+	Image string `json:"image,omitempty"`
 
 	// Replicas defines the number of WebID instances
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of pods"
-	Replicas uint32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // WebServerStatus defines the observed state of WebServer
