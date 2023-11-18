@@ -59,6 +59,7 @@ func (r *Reconciler) createIngress(ctx context.Context, web *webidv1alpha1.WebSe
 			Labels:    labels,
 		},
 		Spec: netv1.IngressSpec{
+			IngressClassName: &r.Cfg.IngressClass,
 			Rules: []netv1.IngressRule{
 				{
 					Host: r.Cfg.IngressDomain,

@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
-	"github.com/tomasji/webid-operator/controllers"
 	"github.com/tomasji/webid-operator/controllers/config"
+	"github.com/tomasji/webid-operator/controllers/pages"
 	"github.com/tomasji/webid-operator/controllers/webserver"
 	//+kubebuilder:scaffold:imports
 )
@@ -89,7 +89,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "WebServer")
 		os.Exit(1)
 	}
-	if err = (&controllers.PageReconciler{
+	if err = (&pages.PageReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

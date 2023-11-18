@@ -71,7 +71,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	reconcileFuncs := []reconcileHelperFunc{
 		r.reconcileDeployment,
-		r.reconcileConfigMap,
+		r.reconcileConfigCM,
+		r.reconcileDataCM,
+		r.reconcileService,
+		r.reconcileIngress,
 	}
 
 	// Get the WebServer object

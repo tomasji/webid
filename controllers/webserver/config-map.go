@@ -13,17 +13,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
+	"github.com/tomasji/webid-operator/controllers/pages"
 )
 
-// reconcileConfigMap gets the configMap (NS+name is same as of the web resource)
-// - if not found, create it
-// - if found, compare it with the required status, update if necessary
-func (r *Reconciler) reconcileConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
-	debug := log.FromContext(ctx).V(1).Info
-	nsName := types.NamespacedName{Namespace: web.Namespace, Name: web.Name}
+type CMType string
 
-	// Get the configMap
-	debug("checking configMap", "name", web.Name)
+const (
+	typeConfig CMType = "config"
+	typeData   CMType = "data"
+	fileConfig        = "default.conf"
+	dataDir           = "/var/www"
+)
+
+func ConfigCMName(base string) string { return base + "-" + (string(typeConfig)) }
+func DataCMName(base string) string   { return base + "-" + (string(typeData)) }
+
+// reconcileConfigCM gets the configMap with nginx configuration
+// - if not found, create it
+func (r *Reconciler) reconcileConfigCM(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+	debug := log.FromContext(ctx).V(1).Info
+	cmName := ConfigCMName(web.Name)
+	nsName := types.NamespacedName{Namespace: web.Namespace, Name: cmName}
+
+	// Get the config configMap
+	debug("checking configMap", "name", cmName)
 	configMap := &corev1.ConfigMap{}
 	if err := r.Get(ctx, nsName, configMap); err != nil {
 		// generic error
@@ -32,43 +45,74 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, web *webidv1alpha1.
 		}
 
 		// configMap not found - create it
-		if err = r.createConfigMap(ctx, web); err != nil {
+		if err = r.createConfigCM(ctx, web); err != nil {
 			return r.failWithStatus(ctx, web, err, "Failed to create configMap")
 		}
 		return web, nil
 	}
 
 	// configMap found - check it and update it if needed
-	debug("configMap found", "name", web.Name)
-	if r.configMapDiffers(web, configMap) {
-		if err := r.updateConfigMap(ctx, web, configMap); err != nil {
-			return r.failWithStatus(ctx, web, err, "Failed to update configMap")
-		}
-	} else {
-		debug("configMap is ok", "name", web.Name)
-	}
+	debug("configMap is ok", "name", cmName)
 	return web, nil
 }
 
-// createConfigMap creates a configMap, set ownership to web
-func (r *Reconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) error {
-	const indexFileName = "index.html"
+// reconcileDataCM gets the configMap with nginx web pages
+// - if not found, create it
+// - if not up to date, update it
+func (r *Reconciler) reconcileDataCM(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+	debug := log.FromContext(ctx).V(1).Info
+	cmName := DataCMName(web.Name)
+	nsName := types.NamespacedName{Namespace: web.Namespace, Name: cmName}
 
+	// Get the data configMap
+	debug("checking configMap", "name", cmName)
+	configMap := &corev1.ConfigMap{}
+	if err := r.Get(ctx, nsName, configMap); err != nil {
+		// generic error
+		if !apierrors.IsNotFound(err) {
+			return r.failWithStatus(ctx, web, err, "Failed to fetch configMap")
+		}
+
+		// configMap not found - create it
+		if err = r.createDataCM(ctx, web); err != nil {
+			return r.failWithStatus(ctx, web, err, "Failed to create configMap")
+		}
+		return web, nil
+	}
+
+	// configMap found - check it and update it if needed
+	debug("configMap is ok", "name", cmName)
+	return web, nil
+}
+
+// createConfigCM creates a configMap with nginx config, set ownership to web
+func (r *Reconciler) createConfigCM(ctx context.Context, web *webidv1alpha1.WebServer) error {
+	return r.createConfigMap(ctx, web, ConfigCMName(web.Name), map[string][]byte{fileConfig: []byte(nginxConfigData)})
+}
+
+// createDataCM creates a configMap with nginx data/web pages, set ownership to web
+func (r *Reconciler) createDataCM(ctx context.Context, web *webidv1alpha1.WebServer) error {
+	data := pages.GetData()
+	return r.createConfigMap(ctx, web, DataCMName(web.Name), data)
+}
+
+// createConfigMap creates a configMap, set ownership to web
+func (r *Reconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.WebServer,
+	name string, items map[string][]byte,
+) error {
 	log := log.FromContext(ctx)
 	labels := map[string]string{
-		"app.kubernetes.io/name":    web.Name + "-nginx",
+		"app.kubernetes.io/name":    name,
 		"app.kubernetes.io/part-of": "webid-operator",
 	}
 
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      web.Name,
+			Name:      name,
 			Namespace: web.Namespace,
 			Labels:    labels,
 		},
-		BinaryData: map[string][]byte{
-			indexFileName: []byte("Hello"),
-		},
+		BinaryData: items,
 	}
 
 	// Set the ownerRef for the ConfigMap
@@ -77,13 +121,13 @@ func (r *Reconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.Web
 		return err
 	}
 
-	log.Info("Creating a new ConfigMap", "namespace", configMap.Namespace, "name", configMap.Name)
+	log.Info("Creating a new ConfigMap", "namespace", configMap.Namespace, "name", name)
 	if err := r.Create(ctx, configMap); err != nil {
 		log.Error(err, "Failed to create new ConfigMap", "ConfigMap.Namespace",
-			configMap.Namespace, "ConfigMap.Name", configMap.Name)
+			configMap.Namespace, "ConfigMap.Name", name)
 		return err
 	}
-	log.V(1).Info("ConfigMap created", "namespace", configMap.Namespace, "name", configMap.Name)
+	log.V(1).Info("ConfigMap created", "namespace", configMap.Namespace, "name", name)
 	return nil
 }
 
@@ -96,3 +140,26 @@ func (r *Reconciler) configMapDiffers(web *webidv1alpha1.WebServer, configMap *c
 func (r *Reconciler) updateConfigMap(ctx context.Context, web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) error {
 	return nil // TODO: implement
 }
+
+const nginxConfigData = `
+server {
+    listen       80;
+    listen  [::]:80;
+    server_name  localhost;
+
+    location / {
+        root   /var/www;
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_format html;
+        autoindex_localtime on;
+        default_type text/html;
+        index  index.html index.htm;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+`

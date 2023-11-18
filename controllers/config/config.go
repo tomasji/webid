@@ -5,6 +5,7 @@ import "github.com/ilyakaznacheev/cleanenv"
 // Config of the controllers
 type Config struct {
 	IngressDomain string `env:"INGRESS_DOMAIN"              env-required:"true"`
+	IngressClass  string `env:"INGRESS_CLASS"              env-default:"nginx"`
 }
 
 // New creates and initializes configuration

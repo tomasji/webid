@@ -61,8 +61,12 @@ func (r *Reconciler) selectorLabels(appName string) map[string]string {
 
 // createDeployment creates a deployment, set ownership to web
 func (r *Reconciler) createDeployment(ctx context.Context, web *webidv1alpha1.WebServer) error {
-	const volName = "config"
-	const configMountPath = "/etc/web"
+	const (
+		configVolName   = "config"
+		configMountPath = "/etc/nginx/conf.d"
+		dataVolName     = "data"
+		dataMountPath   = "/var/www"
+	)
 
 	log := log.FromContext(ctx)
 	labels := r.selectorLabels(web.Name)
@@ -93,19 +97,34 @@ func (r *Reconciler) createDeployment(ctx context.Context, web *webidv1alpha1.We
 						}},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      volName,
+								Name:      configVolName,
 								ReadOnly:  true,
 								MountPath: configMountPath,
+							},
+							{
+								Name:      dataVolName,
+								ReadOnly:  true,
+								MountPath: dataMountPath,
 							},
 						},
 					}},
 					Volumes: []corev1.Volume{
 						{
-							Name: volName,
+							Name: configVolName,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: web.Name,
+										Name: ConfigCMName(web.Name),
+									},
+								},
+							},
+						},
+						{
+							Name: dataVolName,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: DataCMName(web.Name),
 									},
 								},
 							},
