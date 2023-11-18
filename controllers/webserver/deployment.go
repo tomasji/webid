@@ -20,7 +20,7 @@ import (
 // reconcileDeployment gets the deployment (NS+name is same as of the web resource)
 // - if not found, create it
 // - if found, compare it with the required status, update if necessary
-func (r *WebServerReconciler) reconcileDeployment(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+func (r *Reconciler) reconcileDeployment(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
 	debug := log.FromContext(ctx).V(1).Info
 	nsName := types.NamespacedName{Namespace: web.Namespace, Name: web.Name}
 
@@ -52,7 +52,7 @@ func (r *WebServerReconciler) reconcileDeployment(ctx context.Context, web *webi
 	return web, nil
 }
 
-func (r *WebServerReconciler) selectorLabels(appName string) map[string]string {
+func (r *Reconciler) selectorLabels(appName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":    appName + "-nginx",
 		"app.kubernetes.io/part-of": "webid-operator",
@@ -60,7 +60,7 @@ func (r *WebServerReconciler) selectorLabels(appName string) map[string]string {
 }
 
 // createDeployment creates a deployment, set ownership to web
-func (r *WebServerReconciler) createDeployment(ctx context.Context, web *webidv1alpha1.WebServer) error {
+func (r *Reconciler) createDeployment(ctx context.Context, web *webidv1alpha1.WebServer) error {
 	const volName = "config"
 	const configMountPath = "/etc/web"
 
@@ -132,7 +132,7 @@ func (r *WebServerReconciler) createDeployment(ctx context.Context, web *webidv1
 }
 
 // deploymentDiffers returns true if docker image or number of replicas are different than expected
-func (r *WebServerReconciler) deploymentDiffers(web *webidv1alpha1.WebServer, deployment *appsv1.Deployment) bool {
+func (r *Reconciler) deploymentDiffers(web *webidv1alpha1.WebServer, deployment *appsv1.Deployment) bool {
 	if len(deployment.Spec.Template.Spec.Containers) != 1 {
 		return true
 	}
@@ -141,7 +141,7 @@ func (r *WebServerReconciler) deploymentDiffers(web *webidv1alpha1.WebServer, de
 }
 
 // updateDeployment updates image and/or replicas of the deployment
-func (r *WebServerReconciler) updateDeployment(ctx context.Context, web *webidv1alpha1.WebServer, deployment *appsv1.Deployment) error {
+func (r *Reconciler) updateDeployment(ctx context.Context, web *webidv1alpha1.WebServer, deployment *appsv1.Deployment) error {
 	log := log.FromContext(ctx)
 
 	log.Info("updating deployment", "name", web.Name)

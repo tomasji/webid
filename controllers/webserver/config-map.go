@@ -18,7 +18,7 @@ import (
 // reconcileConfigMap gets the configMap (NS+name is same as of the web resource)
 // - if not found, create it
 // - if found, compare it with the required status, update if necessary
-func (r *WebServerReconciler) reconcileConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+func (r *Reconciler) reconcileConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
 	debug := log.FromContext(ctx).V(1).Info
 	nsName := types.NamespacedName{Namespace: web.Namespace, Name: web.Name}
 
@@ -51,7 +51,7 @@ func (r *WebServerReconciler) reconcileConfigMap(ctx context.Context, web *webid
 }
 
 // createConfigMap creates a configMap, set ownership to web
-func (r *WebServerReconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) error {
+func (r *Reconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.WebServer) error {
 	const indexFileName = "index.html"
 
 	log := log.FromContext(ctx)
@@ -88,11 +88,11 @@ func (r *WebServerReconciler) createConfigMap(ctx context.Context, web *webidv1a
 }
 
 // configMapDiffers returns true if docker image or number of replicas are different than expected
-func (r *WebServerReconciler) configMapDiffers(web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) bool {
+func (r *Reconciler) configMapDiffers(web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) bool {
 	return false // TODO: implement
 }
 
 // updateConfigMap updates image and/or replicas of the configMap
-func (r *WebServerReconciler) updateConfigMap(ctx context.Context, web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) error {
+func (r *Reconciler) updateConfigMap(ctx context.Context, web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) error {
 	return nil // TODO: implement
 }

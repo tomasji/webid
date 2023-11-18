@@ -17,7 +17,7 @@ import (
 
 // reconcileService gets the service (NS+name is same as of the web resource)
 // - if not found, create it
-func (r *WebServerReconciler) reconcileService(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+func (r *Reconciler) reconcileService(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
 	debug := log.FromContext(ctx).V(1).Info
 	nsName := types.NamespacedName{Namespace: web.Namespace, Name: web.Name}
 
@@ -43,7 +43,7 @@ func (r *WebServerReconciler) reconcileService(ctx context.Context, web *webidv1
 }
 
 // createService creates a service, set ownership to web
-func (r *WebServerReconciler) createService(ctx context.Context, web *webidv1alpha1.WebServer) error {
+func (r *Reconciler) createService(ctx context.Context, web *webidv1alpha1.WebServer) error {
 	const httpPort = "http"
 	const indexFileName = "index.html"
 

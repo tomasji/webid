@@ -36,12 +36,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
+	"github.com/tomasji/webid-operator/controllers/config"
 )
 
-// WebServerReconciler reconciles a WebServer object
-type WebServerReconciler struct {
+// Reconciler reconciles a WebServer object
+type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Cfg    *config.Config
 }
 
 const (
@@ -63,7 +65,7 @@ type reconcileHelperFunc = func(ctx context.Context, web *webidv1alpha1.WebServe
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *WebServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	debug := log.V(1).Info
 
@@ -104,7 +106,7 @@ func (r *WebServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // - nil, nil -> stop reconciliation (obj deleted)
 // - nil, error -> stop reconciliation (requeue)
 // - web, nik -> got it
-func (r *WebServerReconciler) getObj(ctx context.Context, namespacedName types.NamespacedName) (web *webidv1alpha1.WebServer, err error) {
+func (r *Reconciler) getObj(ctx context.Context, namespacedName types.NamespacedName) (web *webidv1alpha1.WebServer, err error) {
 	log := log.FromContext(ctx)
 
 	web = &webidv1alpha1.WebServer{}
@@ -122,7 +124,7 @@ func (r *WebServerReconciler) getObj(ctx context.Context, namespacedName types.N
 }
 
 // setStatus updates status conditions, returns the updated web object
-func (r *WebServerReconciler) setStatus(ctx context.Context, web *webidv1alpha1.WebServer, status metav1.ConditionStatus, message string,
+func (r *Reconciler) setStatus(ctx context.Context, web *webidv1alpha1.WebServer, status metav1.ConditionStatus, message string,
 ) (updatedWeb *webidv1alpha1.WebServer, err error) {
 	const statusReason = "Reconciling"
 	log := log.FromContext(ctx)
@@ -145,7 +147,7 @@ func (r *WebServerReconciler) setStatus(ctx context.Context, web *webidv1alpha1.
 
 // failWithStatus logs the error and tries to set web status.Conditions.
 // returns {nil, error}
-func (r *WebServerReconciler) failWithStatus(ctx context.Context, web *webidv1alpha1.WebServer, err error, msg string) (*webidv1alpha1.WebServer, error) {
+func (r *Reconciler) failWithStatus(ctx context.Context, web *webidv1alpha1.WebServer, err error, msg string) (*webidv1alpha1.WebServer, error) {
 	log := log.FromContext(ctx)
 
 	log.Error(err, msg)
@@ -157,7 +159,7 @@ func (r *WebServerReconciler) failWithStatus(ctx context.Context, web *webidv1al
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *WebServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&webidv1alpha1.WebServer{}).
 		Owns(&appsv1.Deployment{}).

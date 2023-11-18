@@ -16,7 +16,7 @@ import (
 
 // reconcileIngress gets the ingress (NS+name is same as of the web resource)
 // - if not found, create it
-func (r *WebServerReconciler) reconcileIngress(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
+func (r *Reconciler) reconcileIngress(ctx context.Context, web *webidv1alpha1.WebServer) (*webidv1alpha1.WebServer, error) {
 	debug := log.FromContext(ctx).V(1).Info
 	nsName := types.NamespacedName{Namespace: web.Namespace, Name: web.Name}
 
@@ -42,7 +42,7 @@ func (r *WebServerReconciler) reconcileIngress(ctx context.Context, web *webidv1
 }
 
 // createIngress creates a ingress, set ownership to web
-func (r *WebServerReconciler) createIngress(ctx context.Context, web *webidv1alpha1.WebServer) error {
+func (r *Reconciler) createIngress(ctx context.Context, web *webidv1alpha1.WebServer) error {
 	const httpPort = "http"
 	const indexFileName = "index.html"
 
@@ -61,7 +61,7 @@ func (r *WebServerReconciler) createIngress(ctx context.Context, web *webidv1alp
 		Spec: netv1.IngressSpec{
 			Rules: []netv1.IngressRule{
 				{
-					Host: "x",
+					Host: r.Cfg.IngressDomain,
 					IngressRuleValue: netv1.IngressRuleValue{
 						HTTP: &netv1.HTTPIngressRuleValue{
 							Paths: []netv1.HTTPIngressPath{
