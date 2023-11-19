@@ -37,13 +37,15 @@ import (
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
 	"github.com/tomasji/webid-operator/controllers/config"
+	"github.com/tomasji/webid-operator/controllers/pages"
 )
 
 // Reconciler reconciles a WebServer object
 type Reconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Cfg    *config.Config
+	Scheme       *runtime.Scheme
+	Cfg          *config.Config
+	DataProvider pages.DataProvider
 }
 
 const (
@@ -98,6 +100,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
+	// set status
+	meta.SetStatusCondition(&web.Status.Conditions, metav1.Condition{Type: "UpToDate", Status: metav1.ConditionTrue,
+		Reason: "PageChanged", Message: "Pages updated"})
 	if web, err = r.setStatus(ctx, web, metav1.ConditionTrue, "Finished reconciliation"); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -108,7 +113,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // getObj retrieves webserver object, it returns:
 // - nil, nil -> stop reconciliation (obj deleted)
 // - nil, error -> stop reconciliation (requeue)
-// - web, nik -> got it
+// - web, nil -> got it
 func (r *Reconciler) getObj(ctx context.Context, namespacedName types.NamespacedName) (web *webidv1alpha1.WebServer, err error) {
 	log := log.FromContext(ctx)
 
@@ -134,7 +139,9 @@ func (r *Reconciler) setStatus(ctx context.Context, web *webidv1alpha1.WebServer
 
 	meta.SetStatusCondition(&web.Status.Conditions, metav1.Condition{Type: typeAvailableWeb, Status: status, Reason: statusReason, Message: message})
 	if err = r.Status().Update(ctx, web); err != nil {
-		log.Error(err, "Failed to update WebServer status")
+		if !apierrors.IsConflict(err) {
+			log.Error(err, "Failed to update WebServer status")
+		}
 		return nil, err
 	}
 
@@ -175,10 +182,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func webServerEventFilter() predicate.Predicate {
 	return predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
-		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// Evaluates to false if the object has been confirmed deleted.
 			return !e.DeleteStateUnknown

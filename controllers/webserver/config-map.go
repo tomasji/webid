@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	webidv1alpha1 "github.com/tomasji/webid-operator/api/v1alpha1"
-	"github.com/tomasji/webid-operator/controllers/pages"
 )
 
 type CMType string
@@ -51,7 +50,7 @@ func (r *Reconciler) reconcileConfigCM(ctx context.Context, web *webidv1alpha1.W
 		return web, nil
 	}
 
-	// configMap found - check it and update it if needed
+	// configMap found - static CM should not be updated
 	debug("configMap is ok", "name", cmName)
 	return web, nil
 }
@@ -81,6 +80,12 @@ func (r *Reconciler) reconcileDataCM(ctx context.Context, web *webidv1alpha1.Web
 	}
 
 	// configMap found - check it and update it if needed
+	data := r.DataProvider.GetData(types.NamespacedName{Namespace: web.Namespace, Name: web.Name})
+	if r.configMapDiffers(configMap, data) {
+		if err := r.updateConfigMap(ctx, configMap, data); err != nil {
+			return r.failWithStatus(ctx, web, err, "Failed to update configMap")
+		}
+	}
 	debug("configMap is ok", "name", cmName)
 	return web, nil
 }
@@ -92,7 +97,7 @@ func (r *Reconciler) createConfigCM(ctx context.Context, web *webidv1alpha1.WebS
 
 // createDataCM creates a configMap with nginx data/web pages, set ownership to web
 func (r *Reconciler) createDataCM(ctx context.Context, web *webidv1alpha1.WebServer) error {
-	data := pages.GetData()
+	data := r.DataProvider.GetData(types.NamespacedName{Namespace: web.Namespace, Name: web.Name})
 	return r.createConfigMap(ctx, web, DataCMName(web.Name), data)
 }
 
@@ -132,13 +137,22 @@ func (r *Reconciler) createConfigMap(ctx context.Context, web *webidv1alpha1.Web
 }
 
 // configMapDiffers returns true if docker image or number of replicas are different than expected
-func (r *Reconciler) configMapDiffers(web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) bool {
-	return false // TODO: implement
+func (r *Reconciler) configMapDiffers(configMap *corev1.ConfigMap, data map[string][]byte) bool {
+	return r.DataProvider.DataDiffer(configMap.BinaryData, data)
 }
 
 // updateConfigMap updates image and/or replicas of the configMap
-func (r *Reconciler) updateConfigMap(ctx context.Context, web *webidv1alpha1.WebServer, configMap *corev1.ConfigMap) error {
-	return nil // TODO: implement
+func (r *Reconciler) updateConfigMap(ctx context.Context, configMap *corev1.ConfigMap, data map[string][]byte) error {
+	log := log.FromContext(ctx)
+
+	log.Info("updating config map", "name", configMap.Name)
+	configMap.BinaryData = data
+	if err := r.Update(ctx, configMap); err != nil {
+		return err
+	}
+
+	log.V(1).Info("config map updated", "name", configMap.Name)
+	return nil
 }
 
 const nginxConfigData = `

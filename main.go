@@ -26,6 +26,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,19 +82,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&webserver.Reconciler{
+	pageSvc := pages.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Cfg:    cfg,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WebServer")
+		Data:   make(map[types.NamespacedName]pages.PageData),
+	}
+	if err = (&pageSvc).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Page")
 		os.Exit(1)
 	}
-	if err = (&pages.PageReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+
+	if err = (&webserver.Reconciler{
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		Cfg:          cfg,
+		DataProvider: &pageSvc,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Page")
+		setupLog.Error(err, "unable to create controller", "controller", "WebServer")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

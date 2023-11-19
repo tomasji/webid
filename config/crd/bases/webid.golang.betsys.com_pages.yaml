@@ -42,6 +42,10 @@ spec:
                 description: Name defines the name of the web page as displayed in
                   index
                 type: string
+              webserver:
+                description: WebServer defines the name of the WebSever resource,
+                  that shall host the page
+                type: string
             type: object
           status:
             description: PageStatus defines the observed state of Page

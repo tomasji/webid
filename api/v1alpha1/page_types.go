@@ -28,7 +28,7 @@ type PageSpec struct {
 	// WebServer defines the name of the WebSever resource, that shall host the page
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="WebServer resource"
-	WebServer string `json:"name,omitempty"`
+	WebServer string `json:"webserver,omitempty"`
 
 	// Name defines the name of the web page as displayed in index
 	// +kubebuilder:validation:Required
